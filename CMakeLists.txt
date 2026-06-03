@@ -86,6 +86,21 @@ target_link_libraries(Texturizado
     m
 )
 
+# Tarefa 5 - Adicionando Iluminação
+set(SOURCES_LIGHTING
+    ${CMAKE_SOURCE_DIR}/src/glad.c
+    ${CMAKE_SOURCE_DIR}/src/Iluminado.cpp
+)
+
+add_executable(Iluminado ${SOURCES_LIGHTING})
+
+target_link_libraries(Iluminado
+    ${OPENGL_LIBRARIES}
+    ${GLFW_LIBRARIES}
+    dl
+    m
+)
+
 # Tarefa 4 - Câmera em primeira pessoa
 # (Adicionada em 2026-06-02 conforme a Tarefa "Adicionando uma câmera em primeira pessoa")
 set(SOURCES_CAMERA
