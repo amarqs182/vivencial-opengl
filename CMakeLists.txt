@@ -71,6 +71,21 @@ target_link_libraries(CuboInstanciado
     m
 )
 
+# Tarefa 3 - Adicionando Texturas
+set(SOURCES_TEXTURED
+    ${CMAKE_SOURCE_DIR}/src/glad.c
+    ${CMAKE_SOURCE_DIR}/src/Texturizado.cpp
+)
+
+add_executable(Texturizado ${SOURCES_TEXTURED})
+
+target_link_libraries(Texturizado
+    ${OPENGL_LIBRARIES}
+    ${GLFW_LIBRARIES}
+    dl
+    m
+)
+
 # Tarefa 4 - Câmera em primeira pessoa
 # (Adicionada em 2026-06-02 conforme a Tarefa "Adicionando uma câmera em primeira pessoa")
 set(SOURCES_CAMERA
