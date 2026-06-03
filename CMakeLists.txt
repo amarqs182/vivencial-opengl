@@ -41,6 +41,21 @@ target_link_libraries(${PROJECT_NAME}
     m
 )
 
+# Tarefa 1 - Criando o ambiente de Programação de cenas 3D
+set(SOURCES_HELLO3D
+    ${CMAKE_SOURCE_DIR}/src/glad.c
+    ${CMAKE_SOURCE_DIR}/src/Hello3D.cpp
+)
+
+add_executable(Hello3D ${SOURCES_HELLO3D})
+
+target_link_libraries(Hello3D
+    ${OPENGL_LIBRARIES}
+    ${GLFW_LIBRARIES}
+    dl
+    m
+)
+
 # Tarefa 4 - Câmera em primeira pessoa
 # (Adicionada em 2026-06-02 conforme a Tarefa "Adicionando uma câmera em primeira pessoa")
 set(SOURCES_CAMERA
