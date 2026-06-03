@@ -147,6 +147,46 @@ A função `loadSimpleOBJ` lê o arquivo `.OBJ` linha por linha e processa:
 
 Para cada vértice da face, o buffer contém: `x, y, z, r, g, b` (posição + cor), totalizando 6 floats por vértice.
 
+## Tarefa 4 — Câmera em Primeira Pessoa (2026-06-02)
+
+Implementação de uma câmera em primeira pessoa como uma classe `Camera` que encapsula posição, orientação (yaw/pitch) e parâmetros de projeção, expondo métodos `Mover` (`processKeyboard`) e `Rotacionar` (`processMouseMovement`).
+
+### Arquivos adicionados
+
+| Arquivo | Função |
+|---|---|
+| `include/Camera.h` | Header da classe `Camera` |
+| `src/Camera.cpp` | Implementação da classe |
+| `src/Hello3DCamera.cpp` | Programa principal: cubo renderizado com câmera FPS |
+| `src/Hello3DCamera.md` | Documentação detalhada da entrega (matemática, controles, design) |
+
+### Controles do `Hello3DCamera`
+
+| Tecla | Ação | Método chamado |
+|---|---|---|
+| W / S | Mover frente / trás | `processKeyboard(FORWARD/BACKWARD)` |
+| A / D | Strafe esquerda / direita | `processKeyboard(LEFT/RIGHT_DIR)` |
+| Q / E | Descer / subir (eixo Y) | `processKeyboard(DOWN/UP)` |
+| Mouse | Olhar em volta (yaw/pitch) | `processMouseMovement(xoff, yoff)` |
+| Scroll | Zoom (FOV 1° a 45°) | `processMouseScroll(yoff)` |
+| ESC | Sair | — |
+
+### Compilação
+
+O `CMakeLists.txt` foi atualizado para gerar **dois executáveis**:
+
+```bash
+mkdir -p build && cd build
+cmake ..
+make
+
+# Vivencial 1 (visualizador OBJ):
+./VivencialOBJViewer
+
+# Tarefa 4 (câmera FPS):
+./Hello3DCamera
+```
+
 ## Configuração para Laboratórios Unisinos (Windows)
 
 Para compilar nos laboratórios da Unisinos, siga o tutorial oficial:

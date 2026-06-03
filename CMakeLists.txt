@@ -26,15 +26,32 @@ include_directories(
     ${GLM_INCLUDE_DIR}
 )
 
-# Source files
-set(SOURCES
+# Source files - vivencial (OBJ viewer)
+set(SOURCES_VIVENCIAL
     ${CMAKE_SOURCE_DIR}/src/glad.c
     ${CMAKE_SOURCE_DIR}/src/main.cpp
 )
 
-add_executable(${PROJECT_NAME} ${SOURCES})
+add_executable(${PROJECT_NAME} ${SOURCES_VIVENCIAL})
 
 target_link_libraries(${PROJECT_NAME}
+    ${OPENGL_LIBRARIES}
+    ${GLFW_LIBRARIES}
+    dl
+    m
+)
+
+# Tarefa 4 - Câmera em primeira pessoa
+# (Adicionada em 2026-06-02 conforme a Tarefa "Adicionando uma câmera em primeira pessoa")
+set(SOURCES_CAMERA
+    ${CMAKE_SOURCE_DIR}/src/glad.c
+    ${CMAKE_SOURCE_DIR}/src/Camera.cpp
+    ${CMAKE_SOURCE_DIR}/src/Hello3DCamera.cpp
+)
+
+add_executable(Hello3DCamera ${SOURCES_CAMERA})
+
+target_link_libraries(Hello3DCamera
     ${OPENGL_LIBRARIES}
     ${GLFW_LIBRARIES}
     dl
