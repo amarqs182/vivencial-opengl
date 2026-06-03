@@ -116,14 +116,34 @@ GLuint setupShader() {
     glShaderSource(vertexShader, 1, &vertexSource, NULL);
     glCompileShader(vertexShader);
 
+    GLint success;
+    GLchar infoLog[512];
+    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
+        cerr << "Erro no Vertex Shader:\n" << infoLog << endl;
+    }
+
     GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(fragmentShader, 1, &fragmentSource, NULL);
     glCompileShader(fragmentShader);
+
+    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
+        cerr << "Erro no Fragment Shader:\n" << infoLog << endl;
+    }
 
     GLuint shaderProgram = glCreateProgram();
     glAttachShader(shaderProgram, vertexShader);
     glAttachShader(shaderProgram, fragmentShader);
     glLinkProgram(shaderProgram);
+
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+    if (!success) {
+        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+        cerr << "Erro na linkagem do Shader Program:\n" << infoLog << endl;
+    }
 
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
@@ -198,7 +218,10 @@ GLuint setupCubeVAO() {
 }
 
 int main() {
-    glfwInit();
+    if (!glfwInit()) {
+        cerr << "Falha ao inicializar GLFW" << endl;
+        return -1;
+    }
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -214,11 +237,20 @@ int main() {
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         cerr << "Falha ao inicializar GLAD" << endl;
+        glfwTerminate();
         return -1;
     }
 
-    cout << "Renderer: " << glGetString(GL_RENDERER) << endl;
-    cout << "OpenGL: " << glGetString(GL_VERSION) << endl;
+    const char* renderer = (const char*)glGetString(GL_RENDERER);
+    const char* version = (const char*)glGetString(GL_VERSION);
+    if (renderer && version) {
+        cout << "Renderer: " << renderer << endl;
+        cout << "OpenGL: " << version << endl;
+    } else {
+        cerr << "Erro ao obter informações do OpenGL" << endl;
+        glfwTerminate();
+        return -1;
+    }
 
     glViewport(0, 0, WIDTH, HEIGHT);
     glEnable(GL_DEPTH_TEST);
@@ -281,7 +313,9 @@ int main() {
         glfwSwapBuffers(window);
     }
 
+    // Cleanup
     glDeleteVertexArrays(1, &cubeVAO);
+    glDeleteProgram(shaderProgram);
     glfwTerminate();
     return 0;
 }

@@ -19,6 +19,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <algorithm>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -26,6 +27,17 @@
 #include <glm/gtc/type_ptr.hpp>
 
 using namespace std;
+
+// Safe stoi with default value
+int safeStoi(const string& s, int defaultVal = 0) {
+    try { return stoi(s); }
+    catch (...) { return defaultVal; }
+}
+
+// Path traversal check
+bool isPathSafe(const string& basePath, const string& fullPath) {
+    return fullPath.find(basePath) == 0;
+}
 
 const GLuint WIDTH = 800, HEIGHT = 800;
 
@@ -130,7 +142,12 @@ Mesh loadOBJWithNormals(const string& objPath, Material& outMat) {
             if (word == "mtllib") {
                 string mtlName;
                 ss >> mtlName;
-                outMat = loadMTL(basePath + mtlName);
+                string fullMtlPath = basePath + mtlName;
+                if (isPathSafe(basePath, fullMtlPath)) {
+                    outMat = loadMTL(fullMtlPath);
+                } else {
+                    cerr << "  Path traversal rejeitado: " << mtlName << endl;
+                }
             }
         }
         objFile.close();
@@ -140,7 +157,7 @@ Mesh loadOBJWithNormals(const string& objPath, Material& outMat) {
     objFile.open(objPath);
     if (!objFile.is_open()) {
         cerr << "Erro ao abrir: " << objPath << endl;
-        return {(GLuint)-1, 0};
+        return {0, 0};
     }
 
     string line;
@@ -166,9 +183,17 @@ Mesh loadOBJWithNormals(const string& objPath, Material& outMat) {
                 int vi = 0, ni = 0;
 
                 // v//vn
-                if (getline(ss, index, '/')) vi = !index.empty() ? stoi(index) - 1 : 0;
+                if (getline(ss, index, '/'))
+                    vi = safeStoi(index) - 1;
                 getline(ss, index, '/'); // pula vt
-                if (getline(ss, index)) ni = !index.empty() ? stoi(index) - 1 : 0;
+                if (getline(ss, index))
+                    ni = safeStoi(index) - 1;
+
+                // Bounds check for vertices
+                if (vi < 0 || vi >= (int)vertices.size()) {
+                    cerr << "  Índice de vértice inválido: " << vi + 1 << endl;
+                    continue;
+                }
 
                 // Posição
                 vBuffer.push_back(vertices[vi].x);
@@ -192,7 +217,7 @@ Mesh loadOBJWithNormals(const string& objPath, Material& outMat) {
 
     if (vBuffer.empty()) {
         cerr << "Arquivo vazio: " << objPath << endl;
-        return {(GLuint)-1, 0};
+        return {0, 0};
     }
 
     GLuint VBO, VAO;
@@ -274,14 +299,34 @@ GLuint setupShader() {
     glShaderSource(vertexShader, 1, &vertexSource, NULL);
     glCompileShader(vertexShader);
 
+    GLint success;
+    GLchar infoLog[512];
+    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
+        cerr << "Erro no Vertex Shader:\n" << infoLog << endl;
+    }
+
     GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(fragmentShader, 1, &fragmentSource, NULL);
     glCompileShader(fragmentShader);
+
+    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
+        cerr << "Erro no Fragment Shader:\n" << infoLog << endl;
+    }
 
     GLuint shaderProgram = glCreateProgram();
     glAttachShader(shaderProgram, vertexShader);
     glAttachShader(shaderProgram, fragmentShader);
     glLinkProgram(shaderProgram);
+
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+    if (!success) {
+        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+        cerr << "Erro na linkagem do Shader Program:\n" << infoLog << endl;
+    }
 
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
@@ -306,11 +351,20 @@ int main() {
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         cerr << "Falha ao inicializar GLAD" << endl;
+        glfwTerminate();
         return -1;
     }
 
-    cout << "Renderer: " << glGetString(GL_RENDERER) << endl;
-    cout << "OpenGL: " << glGetString(GL_VERSION) << endl;
+    const char* renderer = (const char*)glGetString(GL_RENDERER);
+    const char* version = (const char*)glGetString(GL_VERSION);
+    if (renderer && version) {
+        cout << "Renderer: " << renderer << endl;
+        cout << "OpenGL: " << version << endl;
+    } else {
+        cerr << "Erro ao obter informações do OpenGL" << endl;
+        glfwTerminate();
+        return -1;
+    }
 
     glViewport(0, 0, WIDTH, HEIGHT);
     glEnable(GL_DEPTH_TEST);
@@ -321,7 +375,7 @@ int main() {
 
     Material mat1;
     Mesh suzanneMesh = loadOBJWithNormals(basePath + "Suzanne.obj", mat1);
-    if (suzanneMesh.VAO != (GLuint)-1) {
+    if (suzanneMesh.VAO != 0) {
         Object3D obj;
         obj.mesh = suzanneMesh;
         obj.name = "Suzanne";
@@ -333,7 +387,7 @@ int main() {
 
     Material mat2;
     Mesh cubeMesh = loadOBJWithNormals(basePath + "Cube.obj", mat2);
-    if (cubeMesh.VAO != (GLuint)-1) {
+    if (cubeMesh.VAO != 0) {
         Object3D obj;
         obj.mesh = cubeMesh;
         obj.name = "Cube";
@@ -402,6 +456,12 @@ int main() {
 
         glfwSwapBuffers(window);
     }
+
+    // Cleanup
+    for (const auto& obj : objects) {
+        glDeleteVertexArrays(1, &obj.mesh.VAO);
+    }
+    glDeleteProgram(shaderProgram);
 
     glfwTerminate();
     return 0;

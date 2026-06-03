@@ -90,7 +90,10 @@ const GLchar* fragmentShaderSource = "#version 450\n"
 int main()
 {
     // Inicializa GLFW
-    glfwInit();
+    if (!glfwInit()) {
+        cerr << "Falha ao inicializar GLFW" << endl;
+        return -1;
+    }
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -98,6 +101,11 @@ int main()
     // Janela
     GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT,
         "CG 2026/1 - Tarefa 4 - Camera FPS", nullptr, nullptr);
+    if (!window) {
+        cerr << "Falha ao criar janela GLFW" << endl;
+        glfwTerminate();
+        return -1;
+    }
     glfwMakeContextCurrent(window);
 
     // Callbacks
@@ -112,13 +120,20 @@ int main()
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
         std::cout << "Failed to initialize GLAD" << std::endl;
+        glfwTerminate();
         return -1;
     }
 
     const GLubyte* renderer = glGetString(GL_RENDERER);
     const GLubyte* version  = glGetString(GL_VERSION);
-    cout << "Renderer: " << renderer << endl;
-    cout << "OpenGL version: " << version << endl;
+    if (renderer && version) {
+        cout << "Renderer: " << renderer << endl;
+        cout << "OpenGL version: " << version << endl;
+    } else {
+        cerr << "Erro ao obter informações do OpenGL" << endl;
+        glfwTerminate();
+        return -1;
+    }
 
     // Viewport
     int width, height;
@@ -174,7 +189,9 @@ int main()
         glfwSwapBuffers(window);
     }
 
+    // Cleanup
     glDeleteVertexArrays(1, &VAO);
+    glDeleteProgram(shaderID);
     glfwTerminate();
     return 0;
 }

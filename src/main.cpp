@@ -44,6 +44,12 @@
 
 using namespace std;
 
+// Safe stoi with default value
+int safeStoi(const string& s, int defaultVal = 0) {
+    try { return stoi(s); }
+    catch (...) { return defaultVal; }
+}
+
 // ============================================
 // ESTRUTURAS DE DADOS
 // ============================================
@@ -90,7 +96,11 @@ struct Trajectory {
     }
 
     void addPoint(const glm::vec3& p) {
-        points.push_back(p);
+        if (points.size() < 1000) {
+            points.push_back(p);
+        } else {
+            cerr << "Limite de 1000 pontos atingido." << endl;
+        }
     }
 
     void clear() {
@@ -245,6 +255,18 @@ int main(int argc, char* argv[])
     // GLAD
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         cerr << "Falha ao inicializar GLAD" << endl;
+        glfwTerminate();
+        return -1;
+    }
+
+    const char* renderer = (const char*)glGetString(GL_RENDERER);
+    const char* version = (const char*)glGetString(GL_VERSION);
+    if (renderer && version) {
+        cout << "Renderer: " << renderer << endl;
+        cout << "OpenGL: " << version << endl;
+    } else {
+        cerr << "Erro ao obter informações do OpenGL" << endl;
+        glfwTerminate();
         return -1;
     }
 
@@ -275,7 +297,7 @@ int main(int argc, char* argv[])
 
     // Suzanne - cor ciano, posição esquerda
     Mesh suzanneMesh = loadSimpleOBJ(basePath + "Suzanne.obj", glm::vec3(0.3f, 0.8f, 0.9f));
-    if (suzanneMesh.VAO != (GLuint)-1) {
+    if (suzanneMesh.VAO != 0) {
         Object3D suzanne("Suzanne", glm::vec3(0.3f, 0.8f, 0.9f));
         suzanne.position = glm::vec3(-1.2f, 0.0f, 0.0f);
         suzanne.mesh = suzanneMesh;
@@ -284,7 +306,7 @@ int main(int argc, char* argv[])
 
     // Cube - cor laranja, posição direita
     Mesh cubeMesh = loadSimpleOBJ(basePath + "Cube.obj", glm::vec3(1.0f, 0.5f, 0.2f));
-    if (cubeMesh.VAO != (GLuint)-1) {
+    if (cubeMesh.VAO != 0) {
         Object3D cube("Cube", glm::vec3(1.0f, 0.5f, 0.2f));
         cube.position = glm::vec3(1.2f, 0.0f, 0.0f);
         cube.scale = glm::vec3(0.4f);
@@ -294,7 +316,7 @@ int main(int argc, char* argv[])
 
     // Suzanne 2 - cor roxo, posição centro-superior (VAO e mesh separados)
     Mesh suzanne2Mesh = loadSimpleOBJ(basePath + "Suzanne.obj", glm::vec3(0.8f, 0.2f, 0.8f));
-    if (suzanne2Mesh.VAO != (GLuint)-1) {
+    if (suzanne2Mesh.VAO != 0) {
         Object3D suzanne2("Suzanne 2", glm::vec3(0.8f, 0.2f, 0.8f));
         suzanne2.position = glm::vec3(0.0f, 1.2f, 0.0f);
         suzanne2.scale = glm::vec3(0.5f);
@@ -363,6 +385,12 @@ int main(int argc, char* argv[])
         glfwSwapBuffers(window);
     }
 
+    // Cleanup
+    for (const auto& obj : sceneObjects) {
+        glDeleteVertexArrays(1, &obj.mesh.VAO);
+    }
+    glDeleteProgram(shaderID);
+
     glfwTerminate();
     return 0;
 }
@@ -380,7 +408,7 @@ Mesh loadSimpleOBJ(const string& filePath, const glm::vec3& color) {
     ifstream arqEntrada(filePath.c_str());
     if (!arqEntrada.is_open()) {
         cerr << "Erro ao tentar ler o arquivo: " << filePath << endl;
-        return { (GLuint)-1, 0 };
+        return { 0, 0 };
     }
 
     string line;
@@ -416,11 +444,17 @@ Mesh loadSimpleOBJ(const string& filePath, const glm::vec3& color) {
 
                 // Parse dos índices com separadores '/'
                 if (getline(ss, index, '/'))
-                    vi = !index.empty() ? stoi(index) - 1 : 0;
+                    vi = safeStoi(index) - 1;
                 if (getline(ss, index, '/'))
-                    ti = !index.empty() ? stoi(index) - 1 : 0;
+                    ti = safeStoi(index) - 1;
                 if (getline(ss, index))
-                    ni = !index.empty() ? stoi(index) - 1 : 0;
+                    ni = safeStoi(index) - 1;
+
+                // Bounds check for vertices
+                if (vi < 0 || vi >= (int)vertices.size()) {
+                    cerr << "  Índice de vértice inválido: " << vi + 1 << endl;
+                    continue;
+                }
 
                 // Adiciona posição do vértice ao buffer
                 vBuffer.push_back(vertices[vi].x);
@@ -439,7 +473,7 @@ Mesh loadSimpleOBJ(const string& filePath, const glm::vec3& color) {
 
     if (vBuffer.empty()) {
         cerr << "Arquivo vazio ou inválido: " << filePath << endl;
-        return { (GLuint)-1, 0 };
+        return { 0, 0 };
     }
 
     // --- Gera VBO e VAO ---

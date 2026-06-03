@@ -20,6 +20,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <algorithm>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -29,6 +30,17 @@
 #include "stb_image.h"
 
 using namespace std;
+
+// Safe stoi with default value
+int safeStoi(const string& s, int defaultVal = 0) {
+    try { return stoi(s); }
+    catch (...) { return defaultVal; }
+}
+
+// Path traversal check
+bool isPathSafe(const string& basePath, const string& fullPath) {
+    return fullPath.find(basePath) == 0;
+}
 
 const GLuint WIDTH = 800, HEIGHT = 800;
 
@@ -102,6 +114,7 @@ GLuint loadTexture(const string& path) {
         cout << "  Textura carregada: " << path << " (" << width << "x" << height << ", " << nrChannels << " canais)" << endl;
     } else {
         cout << "  Erro ao carregar textura: " << path << endl;
+        glDeleteTextures(1, &textureID);
         textureID = 0;
     }
     stbi_image_free(data);
@@ -149,7 +162,12 @@ Mesh loadOBJWithTexture(const string& objPath, const string& texPath, GLuint& ou
             if (word == "mtllib") {
                 string mtlName;
                 ss >> mtlName;
-                mtlTexture = loadMTLTexture(basePath + mtlName);
+                string fullMtlPath = basePath + mtlName;
+                if (isPathSafe(basePath, fullMtlPath)) {
+                    mtlTexture = loadMTLTexture(fullMtlPath);
+                } else {
+                    cerr << "  Path traversal rejeitado: " << mtlName << endl;
+                }
             }
         }
         objFile.close();
@@ -159,7 +177,7 @@ Mesh loadOBJWithTexture(const string& objPath, const string& texPath, GLuint& ou
     objFile.open(objPath);
     if (!objFile.is_open()) {
         cerr << "Erro ao abrir: " << objPath << endl;
-        return {(GLuint)-1, 0};
+        return {0, 0};
     }
 
     string line;
@@ -185,9 +203,15 @@ Mesh loadOBJWithTexture(const string& objPath, const string& texPath, GLuint& ou
                 int vi = 0, ti = 0;
 
                 if (getline(ss, index, '/'))
-                    vi = !index.empty() ? stoi(index) - 1 : 0;
+                    vi = safeStoi(index) - 1;
                 if (getline(ss, index, '/'))
-                    ti = !index.empty() ? stoi(index) - 1 : 0;
+                    ti = safeStoi(index) - 1;
+
+                // Bounds check
+                if (vi < 0 || vi >= (int)vertices.size()) {
+                    cerr << "  Índice de vértice inválido: " << vi + 1 << endl;
+                    continue;
+                }
 
                 // Posição
                 vBuffer.push_back(vertices[vi].x);
@@ -209,7 +233,7 @@ Mesh loadOBJWithTexture(const string& objPath, const string& texPath, GLuint& ou
 
     if (vBuffer.empty()) {
         cerr << "Arquivo vazio: " << objPath << endl;
-        return {(GLuint)-1, 0};
+        return {0, 0};
     }
 
     // Cria VAO/VBO
@@ -234,11 +258,15 @@ Mesh loadOBJWithTexture(const string& objPath, const string& texPath, GLuint& ou
 
     int nVertices = vBuffer.size() / 5;
 
-    // Carrega textura
+    // Carrega textura com path traversal check
     outTexture = 0;
     if (!mtlTexture.empty()) {
         string fullTexPath = basePath + mtlTexture;
-        outTexture = loadTexture(fullTexPath);
+        if (isPathSafe(basePath, fullTexPath)) {
+            outTexture = loadTexture(fullTexPath);
+        } else {
+            cerr << "  Path traversal rejeitado (textura): " << mtlTexture << endl;
+        }
     }
 
     cout << "  OBJ carregado: " << objPath << " (" << nVertices << " vértices)" << endl;
@@ -277,14 +305,34 @@ GLuint setupShader() {
     glShaderSource(vertexShader, 1, &vertexSource, NULL);
     glCompileShader(vertexShader);
 
+    GLint success;
+    GLchar infoLog[512];
+    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
+        cerr << "Erro no Vertex Shader:\n" << infoLog << endl;
+    }
+
     GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(fragmentShader, 1, &fragmentSource, NULL);
     glCompileShader(fragmentShader);
+
+    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
+        cerr << "Erro no Fragment Shader:\n" << infoLog << endl;
+    }
 
     GLuint shaderProgram = glCreateProgram();
     glAttachShader(shaderProgram, vertexShader);
     glAttachShader(shaderProgram, fragmentShader);
     glLinkProgram(shaderProgram);
+
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+    if (!success) {
+        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+        cerr << "Erro na linkagem do Shader Program:\n" << infoLog << endl;
+    }
 
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
@@ -312,8 +360,16 @@ int main() {
         return -1;
     }
 
-    cout << "Renderer: " << glGetString(GL_RENDERER) << endl;
-    cout << "OpenGL: " << glGetString(GL_VERSION) << endl;
+    const char* renderer = (const char*)glGetString(GL_RENDERER);
+    const char* version = (const char*)glGetString(GL_VERSION);
+    if (renderer && version) {
+        cout << "Renderer: " << renderer << endl;
+        cout << "OpenGL: " << version << endl;
+    } else {
+        cerr << "Erro ao obter informações do OpenGL" << endl;
+        glfwTerminate();
+        return -1;
+    }
 
     glViewport(0, 0, WIDTH, HEIGHT);
     glEnable(GL_DEPTH_TEST);
@@ -327,7 +383,7 @@ int main() {
 
     GLuint tex1;
     Mesh suzanneMesh = loadOBJWithTexture(basePath + "Suzanne.obj", basePath + "Suzanne.png", tex1);
-    if (suzanneMesh.VAO != (GLuint)-1) {
+    if (suzanneMesh.VAO != 0) {
         Object3D obj;
         obj.mesh = suzanneMesh;
         obj.name = "Suzanne";
@@ -339,7 +395,7 @@ int main() {
 
     GLuint tex2;
     Mesh cubeMesh = loadOBJWithTexture(basePath + "Cube.obj", "", tex2);
-    if (cubeMesh.VAO != (GLuint)-1) {
+    if (cubeMesh.VAO != 0) {
         Object3D obj;
         obj.mesh = cubeMesh;
         obj.name = "Cube";
@@ -408,6 +464,15 @@ int main() {
 
         glfwSwapBuffers(window);
     }
+
+    // Cleanup
+    for (const auto& obj : objects) {
+        glDeleteVertexArrays(1, &obj.mesh.VAO);
+        if (obj.textureID > 0) {
+            glDeleteTextures(1, &obj.textureID);
+        }
+    }
+    glDeleteProgram(shaderProgram);
 
     glfwTerminate();
     return 0;
