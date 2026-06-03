@@ -56,6 +56,21 @@ target_link_libraries(Hello3D
     m
 )
 
+# Tarefa 2 - Instanciando objetos na cena 3D
+set(SOURCES_CUBO_INST
+    ${CMAKE_SOURCE_DIR}/src/glad.c
+    ${CMAKE_SOURCE_DIR}/src/CuboInstanciado.cpp
+)
+
+add_executable(CuboInstanciado ${SOURCES_CUBO_INST})
+
+target_link_libraries(CuboInstanciado
+    ${OPENGL_LIBRARIES}
+    ${GLFW_LIBRARIES}
+    dl
+    m
+)
+
 # Tarefa 4 - Câmera em primeira pessoa
 # (Adicionada em 2026-06-02 conforme a Tarefa "Adicionando uma câmera em primeira pessoa")
 set(SOURCES_CAMERA
