@@ -4,11 +4,11 @@
  * Cubo com cores por face, controle de translação/escala,
  * múltiplas instâncias na cena.
  *
- * Controles:
- *  W/S    → Translação Y+ / Y-
+ * Controles (conforme requisito do professor):
+ *  W/S    → Translação Z- / Z+
  *  A/D    → Translação X- / X+
- *  I/J    → Translação Y+ / Y- (alternativo)
- *  Q/E    → Translação Z- / Z+
+ *  I/J    → Translação Y+ / Y-
+ *  Q/E    → Translação Z- / Z+ (alternativo)
  *  [      → Escala uniforme diminui
  *  ]      → Escala uniforme aumenta
  *  TAB    → Próximo objeto selecionado
@@ -53,13 +53,15 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     const float S_STEP = 0.1f;
 
     switch (key) {
-        // Translação
-        case GLFW_KEY_W: c.position.y += T_STEP; break;
-        case GLFW_KEY_S: c.position.y -= T_STEP; break;
+        // Translação — WASD para X/Z (conforme requisito do professor)
+        case GLFW_KEY_W: c.position.z -= T_STEP; break;
+        case GLFW_KEY_S: c.position.z += T_STEP; break;
         case GLFW_KEY_A: c.position.x -= T_STEP; break;
         case GLFW_KEY_D: c.position.x += T_STEP; break;
+        // IJ para Y (conforme requisito do professor)
         case GLFW_KEY_I: c.position.y += T_STEP; break;
         case GLFW_KEY_J: c.position.y -= T_STEP; break;
+        // Q/E alternativos para Z
         case GLFW_KEY_Q: c.position.z -= T_STEP; break;
         case GLFW_KEY_E: c.position.z += T_STEP; break;
 

@@ -218,10 +218,10 @@ Mesh loadOBJWithTexture(const string& objPath, const string& texPath, GLuint& ou
                 vBuffer.push_back(vertices[vi].y);
                 vBuffer.push_back(vertices[vi].z);
 
-                // Coordenada de textura
+                // Coordenada de textura (V flip para OpenGL)
                 if (ti >= 0 && ti < (int)texCoords.size()) {
                     vBuffer.push_back(texCoords[ti].s);
-                    vBuffer.push_back(texCoords[ti].t);
+                    vBuffer.push_back(1.0f - texCoords[ti].t);
                 } else {
                     vBuffer.push_back(0.0f);
                     vBuffer.push_back(0.0f);
