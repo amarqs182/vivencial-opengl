@@ -14,6 +14,9 @@ Leitura de arquivos Wavefront `.OBJ` e aplicação de transformações geométri
 - ✅ Rotação (R) nos eixos x, y e z
 - ✅ Escala (S) nos eixos x, y e z + escala uniforme
 - ✅ Cores distintas para cada objeto
+- ✅ Iluminação Phong (ambiente + difusa + especular)
+- ✅ Trajetórias cíclicas com interpolação linear
+- ✅ Salvar/carregar trajetórias em arquivo
 
 ## Estrutura do Projeto
 
@@ -22,9 +25,19 @@ vivencial-opengl/
 ├── CMakeLists.txt          # Build configuration
 ├── README.md               # Este arquivo
 ├── src/
-│   ├── main.cpp            # Código principal (OBJ loader, transforms, render)
+│   ├── main.cpp            # Código principal (OBJ loader, transforms, render, trajectories)
+│   ├── Camera.cpp          # Implementação da classe Camera
+│   ├── Trajectory.cpp      # Implementação da classe Trajectory
+│   ├── TrajectoryDemo.cpp  # Exercício separado de trajetórias com Phong
+│   ├── Hello3D.cpp         # Tarefa 1
+│   ├── CuboInstanciado.cpp # Tarefa 2
+│   ├── Texturizado.cpp     # Tarefa 3
+│   ├── Hello3DCamera.cpp   # Tarefa 4
+│   ├── Iluminado.cpp       # Tarefa 5
 │   └── glad.c              # OpenGL loader (GLAD)
 ├── include/
+│   ├── Camera.h            # Header da classe Camera
+│   ├── Trajectory.h        # Header da classe Trajectory
 │   └── glad/
 │       ├── glad.h
 │       └── KHR/
@@ -137,6 +150,18 @@ Os objetos são armazenados em um `std::vector<Object3D>`:
 vector<Object3D> sceneObjects;
 ```
 
+### `struct Trajectory`
+Gerencia trajetórias cíclicas para objetos:
+- `points` — Lista de pontos de controle (vector<glm::vec3>)
+- `playing` — Se a trajetória está em ciclo (bool)
+- `speed` — Velocidade de movimento (float)
+- `progress` — Progresso entre dois pontos [0,1] (float)
+- `segmentIndex` — Índice do segmento atual (int)
+- `getCurrentPosition()` — Retorna posição interpolada
+- `advance(deltaTime)` — Avança o progresso
+- `addPoint(p)` — Adiciona ponto de controle
+- `clear()` — Limpa todos os pontos
+
 ## Sobre o Loader OBJ
 
 A função `loadSimpleOBJ` lê o arquivo `.OBJ` linha por linha e processa:
@@ -185,6 +210,114 @@ make
 
 # Tarefa 4 (câmera FPS):
 ./Hello3DCamera
+```
+
+## Tarefa 5 — Iluminação Phong (2026-06-02)
+
+Implementação do modelo de iluminação Phong com reflexão ambiente, difusa e especular.
+
+### Conceitos
+
+- **Ambiente (Ka):** Iluminação básica que simula luz indireta
+- **Difusa (Kd):** Reflexão dependente do ângulo entre luz e superfície (Lambert)
+- **Especular (Ks):** Brilho direcional (Phong tradicional)
+- **Atenuação:** Luz diminui com a distância (Kc + Kl*d + Kq*d²)
+
+### Arquivos
+
+| Arquivo | Função |
+|---|---|
+| `src/Iluminado.cpp` | Exercício com iluminação Phong |
+
+### Compilação
+
+```bash
+cd build
+./Iluminado
+```
+
+## Tarefa 6 — Trajetórias (2026-06-16)
+
+Sistema de trajetórias cíclicas para objetos da cena, com interpolação linear entre pontos de controle.
+
+### Funcionalidades
+
+- Adicionar pontos de controle na posição atual do objeto
+- Translação cíclica (ao chegar no último ponto, volta ao primeiro)
+- Interpolação linear entre pontos (LERP)
+- Salvar/carregar pontos em arquivo
+- Suporte a múltiplos objetos
+
+### Implementação no `main.cpp`
+
+A trajetória está integrada ao visualizador OBJ principal:
+
+| Tecla | Ação |
+|---|---|
+| **P** | Entrar no modo Trajetória |
+| **N** | Adiciona ponto na posição do objeto selecionado |
+| **SPACE** | Play / Pause da trajetória |
+| **F** | Salva trajetórias em arquivo (`trajetorias.txt`) |
+| **L** | Carrega trajetórias de arquivo |
+| **X** | Limpa trajetória do objeto selecionado |
+
+### Estrutura de Dados
+
+```cpp
+struct Trajectory {
+    vector<glm::vec3> points;    // Pontos de controle
+    bool playing = false;        // Se está em ciclo
+    float speed = 1.0f;          // Velocidade (unidades/seg)
+    float progress = 0.0f;       // Progresso entre dois pontos [0,1]
+    int segmentIndex = 0;        // Índice do segmento atual
+    
+    glm::vec3 getCurrentPosition(const glm::vec3& basePosition) const;
+    void advance(float deltaTime);
+    void addPoint(const glm::vec3& p);
+    void clear();
+};
+```
+
+### Exercício Separado: `TrajectoryDemo`
+
+Um exercício separado demonstra o sistema de trajetórias com iluminação Phong:
+
+```bash
+cd build
+./TrajectoryDemo
+```
+
+**Controles do `TrajectoryDemo`:**
+
+| Tecla | Ação |
+|---|---|
+| **WASD/QE** | Mover câmera |
+| **Mouse** | Olhar em volta |
+| **TAB** | Trocar objeto selecionado |
+| **1** | Adicionar ponto na posição do objeto |
+| **2** | Remover último ponto |
+| **3** | Limpar todos os pontos |
+| **SPACE** | Ativar/desativar trajetória |
+| **R** | Resetar trajetória |
+| **UP/DOWN** | Ajustar velocidade |
+| **S** | Salvar pontos em arquivo |
+| **L** | Carregar pontos de arquivo |
+
+## Compilação Geral
+
+```bash
+mkdir -p build && cd build
+cmake ..
+make
+
+# Executáveis disponíveis:
+./VivencialOBJViewer    # Principal (com trajetórias)
+./TrajectoryDemo        # Exercício separado
+./Hello3D               # Tarefa 1
+./CuboInstanciado       # Tarefa 2
+./Texturizado           # Tarefa 3
+./Hello3DCamera         # Tarefa 4
+./Iluminado             # Tarefa 5
 ```
 
 ## Configuração para Laboratórios Unisinos (Windows)
