@@ -117,3 +117,20 @@ target_link_libraries(Hello3DCamera
     dl
     m
 )
+
+# Tarefa - Definindo trajetórias para alguns objetos
+set(SOURCES_TRAJECTORY
+    ${CMAKE_SOURCE_DIR}/src/glad.c
+    ${CMAKE_SOURCE_DIR}/src/Camera.cpp
+    ${CMAKE_SOURCE_DIR}/src/Trajectory.cpp
+    ${CMAKE_SOURCE_DIR}/src/TrajectoryDemo.cpp
+)
+
+add_executable(TrajectoryDemo ${SOURCES_TRAJECTORY})
+
+target_link_libraries(TrajectoryDemo
+    ${OPENGL_LIBRARIES}
+    ${GLFW_LIBRARIES}
+    dl
+    m
+)
