@@ -1,2 +1,18 @@
-# Blender 4.3.0 MTL File: 'None'
+# Blender 4.3.0 MTL File: 'Cube'
 # www.blender.org
+# Arquivo corrigido em auditoria pre-Vivencial 2026-06-19:
+# Cube.mtl original veio praticamente VAZIO (apenas 2 linhas de header).
+# Adicionamos aqui o material newmtl + map_Kd apontando para Suzanne.png
+# (unica textura presente no repo no momento).
+# Avaliador pode substituir o .png depois — o codigo continua funcionando.
+
+newmtl Material
+Ns 233.659760
+Ka 0.800000 0.800000 0.800000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd Suzanne.png

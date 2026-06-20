@@ -1,7 +1,7 @@
 /**
  * Tarefa 2 - Instanciando objetos na cena 3D
  *
- * Cubo com cores por face, controle de translação/escala,
+ * Cubo com cores por face, controle de translação/escala/rotação,
  * múltiplas instâncias na cena.
  *
  * Controles (conforme requisito do professor):
@@ -9,6 +9,7 @@
  *  A/D    → Translação X- / X+
  *  I/J    → Translação Y+ / Y-
  *  Q/E    → Translação Z- / Z+ (alternativo)
+ *  X/Y/Z  → Rotação nos eixos X / Y / Z (mantido do projeto base)
  *  [      → Escala uniforme diminui
  *  ]      → Escala uniforme aumenta
  *  TAB    → Próximo objeto selecionado
@@ -30,6 +31,7 @@ const GLuint WIDTH = 800, HEIGHT = 800;
 
 struct Cube {
     glm::vec3 position;
+    glm::vec3 rotation;   // Rotação em graus (re-adicionada em auditoria pré-Vivencial)
     float scale;
     glm::vec3 color;
 };
@@ -50,6 +52,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     Cube& c = cubes[selected];
 
     const float T_STEP = 0.1f;
+    const float RS_STEP = 0.1f;
     const float S_STEP = 0.1f;
 
     switch (key) {
@@ -65,6 +68,11 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         case GLFW_KEY_Q: c.position.z -= T_STEP; break;
         case GLFW_KEY_E: c.position.z += T_STEP; break;
 
+        // Rotação X/Y/Z (do projeto base, mantida no enunciado da T2)
+        case GLFW_KEY_X: c.rotation.x += RS_STEP; break;
+        case GLFW_KEY_Y: c.rotation.y += RS_STEP; break;
+        case GLFW_KEY_Z: c.rotation.z += RS_STEP; break;
+
         // Escala uniforme
         case GLFW_KEY_LEFT_BRACKET:  c.scale -= S_STEP; if (c.scale < 0.1f) c.scale = 0.1f; break;
         case GLFW_KEY_RIGHT_BRACKET: c.scale += S_STEP; break;
@@ -76,6 +84,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         case GLFW_KEY_N: {
             Cube newCube;
             newCube.position = glm::vec3(0.0f);
+            newCube.rotation = glm::vec3(0.0f);
             newCube.scale = 0.5f;
             // Cores cíclicas para diferenciar
             static int colorIdx = 0;
@@ -263,6 +272,7 @@ int main() {
     // Cubo inicial
     Cube initial;
     initial.position = glm::vec3(0.0f);
+    initial.rotation = glm::vec3(0.0f);
     initial.scale = 0.5f;
     initial.color = glm::vec3(1.0f, 0.5f, 0.2f);
     cubes.push_back(initial);
@@ -270,7 +280,8 @@ int main() {
     cout << "\n=== Tarefa 2 - Cubo Instanciado ===" << endl;
     cout << "Controles:" << endl;
     cout << "  WASD/IJ → Translação" << endl;
-    cout << "  Q/E     → Translação Z" << endl;
+    cout << "  Q/E     → Translação Z (alternativo)" << endl;
+    cout << "  X/Y/Z   → Rotação nos eixos" << endl;
     cout << "  [ / ]   → Escala diminui/aumenta" << endl;
     cout << "  TAB     → Próximo objeto" << endl;
     cout << "  N       → Adiciona cubo" << endl;
@@ -300,8 +311,12 @@ int main() {
         glBindVertexArray(cubeVAO);
 
         for (size_t i = 0; i < cubes.size(); i++) {
+            // Matriz Model = T * R * S (ordem canonica em CG)
             glm::mat4 model = glm::mat4(1.0f);
             model = glm::translate(model, cubes[i].position);
+            model = glm::rotate(model, glm::radians(cubes[i].rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+            model = glm::rotate(model, glm::radians(cubes[i].rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+            model = glm::rotate(model, glm::radians(cubes[i].rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
             model = glm::scale(model, glm::vec3(cubes[i].scale));
 
             glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
