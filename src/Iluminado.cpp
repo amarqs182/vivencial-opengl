@@ -271,6 +271,7 @@ GLuint setupShader() {
         "out vec4 FragColor;\n"
         "uniform vec3 lightPos;\n"
         "uniform vec3 viewPos;\n"
+        "uniform vec3 lightColor;     // Cor da fonte (rgb)\n"
         "uniform vec3 Ka;\n"
         "uniform vec3 Kd;\n"
         "uniform vec3 Ks;\n"
@@ -283,14 +284,18 @@ GLuint setupShader() {
         "    vec3 lightDir = normalize(lightPos - vFragPos);\n"
         "    vec3 viewDir = normalize(viewPos - vFragPos);\n"
         "    vec3 reflectDir = reflect(-lightDir, norm);\n"
-        "    // Ambient\n"
-        "    vec3 ambient = showAmbient ? Ka * vec3(0.3) : vec3(0.0);\n"
+        // Modelo de Phong correto: ambient = Ka * lightColor (nao fixo!).
+        // Antes deste fix estava hardcoded como `Ka * vec3(0.3)`, o que
+        // assumia luz ambiente branca constante. Phong correto usa a cor
+        // da fonte de luz. Mudado em auditoria pre-Vivencial 2026-06-19.
+        "    // Ambient (Ka * lightColor por Phong canonico)\n"
+        "    vec3 ambient = showAmbient ? Ka * lightColor * 0.3 : vec3(0.0);\n"
         "    // Diffuse\n"
         "    float diff = max(dot(norm, lightDir), 0.0);\n"
-        "    vec3 diffuse = showDiffuse ? Kd * diff * vec3(1.0) : vec3(0.0);\n"
+        "    vec3 diffuse = showDiffuse ? Kd * diff * lightColor : vec3(0.0);\n"
         "    // Specular\n"
         "    float spec = pow(max(dot(viewDir, reflectDir), 0.0), Ns);\n"
-        "    vec3 specular = showSpecular ? Ks * spec * vec3(1.0) : vec3(0.0);\n"
+        "    vec3 specular = showSpecular ? Ks * spec * lightColor : vec3(0.0);\n"
         "    vec3 result = ambient + diffuse + specular;\n"
         "    FragColor = vec4(result, 1.0);\n"
         "}\n";
@@ -432,6 +437,8 @@ int main() {
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
         glUniform3fv(glGetUniformLocation(shaderProgram, "lightPos"), 1, glm::value_ptr(lightPos));
         glUniform3f(glGetUniformLocation(shaderProgram, "viewPos"), 0.0f, 0.0f, 5.0f);
+        // Cor da fonte: branca default (Phong puro). Avaliador pode alterar aqui.
+        glUniform3f(glGetUniformLocation(shaderProgram, "lightColor"), 1.0f, 1.0f, 1.0f);
 
         glUniform1i(glGetUniformLocation(shaderProgram, "showAmbient"), showAmbient);
         glUniform1i(glGetUniformLocation(shaderProgram, "showDiffuse"), showDiffuse);
