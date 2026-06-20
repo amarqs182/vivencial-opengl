@@ -30,9 +30,11 @@ vivencial-opengl/
 │   ├── Trajectory.cpp      # Implementação da classe Trajectory
 │   ├── TrajectoryDemo.cpp  # Exercício separado de trajetórias com Phong
 │   ├── Hello3D.cpp         # Tarefa 1
+│   ├── Hello3D.md          # Documentação Tarefa 1
 │   ├── CuboInstanciado.cpp # Tarefa 2
 │   ├── Texturizado.cpp     # Tarefa 3
 │   ├── Hello3DCamera.cpp   # Tarefa 4
+│   ├── Hello3DCamera.md    # Documentação Tarefa 4
 │   ├── Iluminado.cpp       # Tarefa 5
 │   └── glad.c              # OpenGL loader (GLAD)
 ├── include/
@@ -45,8 +47,12 @@ vivencial-opengl/
 ├── assets/
 │   └── Modelos3D/          # Modelos .OBJ (Suzanne, Cube, etc.)
 │       ├── Suzanne.obj
+│       ├── Suzanne.mtl
+│       ├── Suzanne.png
 │       ├── Cube.obj
-│       └── SuzanneSubdiv1.obj
+│       ├── Cube.mtl
+│       ├── SuzanneSubdiv1.obj
+│       └── SuzanneSubdiv1.mtl
 └── build/                  # Diretório de build (gerado pelo CMake)
 ```
 
@@ -66,7 +72,7 @@ vivencial-opengl/
 
 ```bash
 # Clone o repositório
-git clone <URL_DO_SEU_REPOSITORIO>
+git clone https://github.com/amarqs182/vivencial-opengl.git
 cd vivencial-opengl
 
 # Crie o diretório de build
@@ -302,6 +308,58 @@ cd build
 | **UP/DOWN** | Ajustar velocidade |
 | **S** | Salvar pontos em arquivo |
 | **L** | Carregar pontos de arquivo |
+
+## Tarefa 1 — Criando o Ambiente de Programação de Cenas 3D (2026-06-03)
+
+Primeiro exercício prático: configuração do ambiente de desenvolvimento e renderização de um triângulo básico com OpenGL.
+
+### Arquivos
+
+| Arquivo | Função |
+|---|---|
+| `src/Hello3D.cpp` | Programa principal: triângulo colorido |
+| `src/Hello3D.md` | Documentação detalhada da entrega |
+
+### Compilação
+
+```bash
+cd build
+./Hello3D
+```
+
+## Tarefa 2 — Instanciando Objetos na Cena 3D (2026-06-03)
+
+Instanciamento de múltiplos objetos na cena com transformações de translação, rotação e escala.
+
+### Arquivos
+
+| Arquivo | Função |
+|---|---|
+| `src/CuboInstanciado.cpp` | Exercício com cubos instanciados |
+
+### Compilação
+
+```bash
+cd build
+./CuboInstanciado
+```
+
+## Tarefa 3 — Adicionando Texturas (2026-06-03)
+
+Aplicação de texturas em objetos 3D usando carregamento de imagens.
+
+### Arquivos
+
+| Arquivo | Função |
+|---|---|
+| `src/Texturizado.cpp` | Exercício com objetos texturizados |
+
+### Compilação
+
+```bash
+cd build
+./Texturizado
+```
 
 ## Compilação Geral
 
